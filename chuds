@@ -2768,41 +2768,45 @@ function RayfieldLibrary:CreateWindow(Settings)
 	return ColorPickerSettings
 end
 
-		-- Section
+local TweenService = game:GetService("TweenService")
+
 function Tab:CreateSection(SectionName, IconName, Color)
 	Color = Color or Color3.fromRGB(255, 255, 255) -- default white
 	IconName = IconName or nil
 
 	local SectionValue = {}
-
-	if SDone then
-		local SectionSpace = Elements.Template.SectionSpacing:Clone()
+	
+	-- SDone is a variable on the Tab to track if we've made a section yet
+	if self.SDone then
+		local SectionSpace = self.Elements.Template.SectionSpacing:Clone()
 		SectionSpace.Visible = true
-		SectionSpace.Parent = TabPage
+		SectionSpace.Parent = self.TabPage
 	end
 
-	local Section = Elements.Template.SectionTitle:Clone()
+	local Section = self.Elements.Template.SectionTitle:Clone()
+	Section.Name = SectionName
 	Section.Title.Text = SectionName
 	Section.Visible = true
-	Section.Parent = TabPage
-
+	Section.Parent = self.TabPage
+	
+	-- Set initial color
+	Section.Title.TextColor3 = Color
+	
 	-- Handle icon
 	if IconName and Section:FindFirstChild("Icon") then
 		local Icon = Section.Icon
 		Icon.Visible = true
 		Icon.Image = Lucide.GetAsset(IconName) or ""
 		Icon.ImageColor3 = Color
+		Icon.ImageTransparency = 1
+		TweenService:Create(Icon, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0}):Play()
 	end
 
-	Section.Title.TextColor3 = Color
+	-- Tween text in
 	Section.Title.TextTransparency = 1
 	TweenService:Create(Section.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
 	
-	if Section:FindFirstChild("Icon") then
-		Section.Icon.ImageTransparency = 1
-		TweenService:Create(Section.Icon, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {ImageTransparency = 0}):Play()
-	end
-
+	-- Methods to update the section later
 	function SectionValue:Set(NewSection)
 		Section.Title.Text = NewSection
 	end
@@ -2816,11 +2820,15 @@ function Tab:CreateSection(SectionName, IconName, Color)
 	
 	function SectionValue:SetIcon(NewIcon)
 		if Section:FindFirstChild("Icon") then
+			Section.Icon.Visible = true
 			Section.Icon.Image = Lucide.GetAsset(NewIcon) or ""
 		end
 	end
-
-	SDone = true
+	
+	-- Store current section so other elements parent to it
+	self.CurrentSection = Section
+	
+	self.SDone = true
 	return SectionValue
 end
 
